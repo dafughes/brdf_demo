@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(glm)
 
 set(SOURCES
     src/main.cpp
+    src/debug.cpp
 
     deps/glad/src/glad.c
 )
