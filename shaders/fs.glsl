@@ -12,6 +12,30 @@ const float hit_threshold = 0.0001f;
 const float max_distance = 1e6f;
 const int max_iterations = 1000;
 const float eps = 0.0001f;
+uniform int supersampling;
+
+const vec2 supersampling_offsets[] = vec2[](
+    vec2(0), // 1 X
+    vec2(-0.25, 0.25), // 4 X
+    vec2(0.25, 0.25),
+    vec2(0.25, -0.25),
+    vec2(-0.25, -0.25),
+    vec2(-0.375, -0.375), // 16 X
+    vec2(-0.125, -0.375),
+    vec2(0.125, -0.375),
+    vec2(0.375, -0.375),
+    vec2(-0.375, -0.125),
+    vec2(-0.125, -0.125),
+    vec2(0.125, -0.125),
+    vec2(0.375, -0.125),
+    vec2(-0.375, 0.125),
+    vec2(-0.125, 0.125),
+    vec2(0.125, 0.125),
+    vec2(0.375, 0.125),
+    vec2(-0.375, 0.375),
+    vec2(-0.125, 0.375),
+    vec2(0.125, 0.375),
+    vec2(0.375, 0.375));
 
 
 // SDF stuff from Inigo Quilez (https://iquilezles.org/articles/distfunctions/)
@@ -102,7 +126,6 @@ vec3 create_ray(vec2 frag_coord, vec2 offset_from_pixel_center, float camera_nea
     return normalize(vec3(pixel.xy, -camera_near));
 }
 
-vec2 offsets[] = vec2[](vec2(-0.25, 0.25), vec2(0.25, 0.25), vec2(0.25, -0.25), vec2(-0.25, -0.25));
 
 void main()
 {
@@ -116,14 +139,31 @@ void main()
 
     vec3 color = vec3(0);
 
-    for (int i = 0; i < 4; i++)
+    int start, end;
+    if (supersampling == 1)
     {
-        vec3 ray_direction = create_ray(frag_coord, offsets[i], camera_near, screen_size.x);
+        start = 0;
+        end = 1;
+    }
+    else if (supersampling == 4)
+    {
+        start = 1;
+        end = 5;
+    }
+    else
+    {
+        start = 5;
+        end = 21;
+    }
+
+    for (int i = start; i < end; i++)
+    {
+        vec3 ray_direction = create_ray(frag_coord, supersampling_offsets[i], camera_near, screen_size.x);
         ray_direction = (view * vec4(ray_direction, 1.0f)).xyz;
 
         color += march(ray_origin, ray_direction);
     }
 
 
-    FragColor = vec4(color / 4.0f, 1.0f);
+    FragColor = vec4(color / float(supersampling), 1.0f);
 }

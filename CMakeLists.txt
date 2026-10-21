@@ -15,6 +15,8 @@ set(SOURCES
     src/main.cpp
     src/debug.cpp
     src/util.cpp
+    src/shader.cpp
+    src/camera.cpp
 
     deps/glad/src/glad.c
 )
