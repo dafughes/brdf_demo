@@ -5,7 +5,14 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <memory>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 
+std::ostream& operator<<(std::ostream& os, const glm::vec3 vec)
+{
+    os << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+    return os;
+}
 
 App::App(int width, int height, const char* title) : AppBase(width, height, title)
 {}
@@ -42,6 +49,8 @@ void App::on_start()
     m_shader->set("fov", m_camera->fov());
     m_shader->set("view", m_camera->view_matrix());
     m_shader->set("supersampling", m_supersampling);
+    m_shader->set("light_pos", m_light_pos);
+    m_shader->set("color", m_color);
 
     m_shader->set("camera_radius", m_camera->radius());
 
@@ -69,8 +78,11 @@ void App::on_resize(int w, int h)
 
 void App::on_mouse_move(double x, double y)
 {
-    m_camera->update(x, y);
-    m_shader->set("view", m_camera->view_matrix());
+    if (!ImGui::GetIO().WantCaptureMouse)
+    {
+        m_camera->update(x, y);
+        m_shader->set("view", m_camera->view_matrix());
+    }
 }
 
 void App::on_mouse_click(int button, double x, double y)
@@ -86,11 +98,61 @@ void App::on_mouse_release(int button, double x, double y)
 }
 
 void App::on_update()
-{}
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+
+    ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Scene settings");
+
+    const char* items[] = {"1", "4", "16"};
+    static const char* current_item = items[0];
+    if (ImGui::BeginCombo("Supersampling", current_item))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+        {
+            bool is_selected = (current_item == items[n]);
+            if (ImGui::Selectable(items[n], is_selected))
+            {
+                m_supersampling = 1 << (n * 2);
+                m_shader->set("supersampling", m_supersampling);
+                current_item = items[n];
+            }
+            if (is_selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+
+        ImGui::EndCombo();
+    }
+
+    if (ImGui::SliderFloat3("Light position", glm::value_ptr(m_light_pos), -30.0f, 30.0f))
+    {
+        m_shader->set("light_pos", m_light_pos);
+    }
+
+    if (ImGui::ColorEdit3("Diffuse color", glm::value_ptr(m_color)))
+    {
+        m_shader->set("color", m_color);
+        std::cout << m_color << "\n";
+    }
+
+
+    ImGui::End();
+}
 
 void App::on_render()
 {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    ImGui::Render();
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void App::on_mouse_scroll(double dx, double dy)

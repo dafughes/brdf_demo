@@ -4,10 +4,12 @@ uniform vec2 screen_size;
 uniform float fov;
 uniform float camera_radius;
 uniform mat4 view;
+uniform vec3 light_pos;
+uniform vec3 color;
+
 
 out vec4 FragColor;
 
-const vec3 light_pos = vec3(5.0f, 3.0f, 0.0f);
 const float hit_threshold = 0.0001f;
 const float max_distance = 1e6f;
 const int max_iterations = 1000;
@@ -111,7 +113,7 @@ vec3 march(vec3 origin, vec3 direction)
         if (!march_ray(hit + eps * normal, light_dir, light_hit))
         {
             float diff = max(0.0f, dot(light_dir, normal));
-            return vec3(diff);
+            return color * diff;
         }
     }
     return vec3(0);
