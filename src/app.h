@@ -26,7 +26,10 @@ private:
     unsigned int m_vbo{0}, m_vao{0};
     int m_supersampling{1};
     glm::vec3 m_light_pos{0.0f, 5.0f, 0.0f};
-    glm::vec3 m_color{1.0f, 1.0f, 1.0f};
+    glm::vec3 m_ambient{1.0f, 1.0f, 1.0f};
+    glm::vec3 m_diffuse{1.0f, 1.0f, 1.0f};
+    glm::vec3 m_specular{1.0f, 1.0f, 1.0f};
+    float m_shininess{1.0f};
     std::unique_ptr<OrbitalCamera> m_camera{nullptr};
     std::unique_ptr<ShaderProgram> m_shader{nullptr};
 };

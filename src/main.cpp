@@ -2,7 +2,7 @@
 
 int main()
 {
-    App app(800, 500, "moi");
+    App app(800, 500, "BRDF Demo");
 
     app.run();
 }

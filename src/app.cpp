@@ -50,7 +50,10 @@ void App::on_start()
     m_shader->set("view", m_camera->view_matrix());
     m_shader->set("supersampling", m_supersampling);
     m_shader->set("light_pos", m_light_pos);
-    m_shader->set("color", m_color);
+    m_shader->set("shininess", m_shininess);
+    m_shader->set("ambient", m_ambient);
+    m_shader->set("diffuse", m_diffuse);
+    m_shader->set("specular", m_specular);
 
     m_shader->set("camera_radius", m_camera->radius());
 
@@ -135,12 +138,26 @@ void App::on_update()
         m_shader->set("light_pos", m_light_pos);
     }
 
-    if (ImGui::ColorEdit3("Diffuse color", glm::value_ptr(m_color)))
+    if (ImGui::ColorEdit3("Ambient", glm::value_ptr(m_ambient)))
     {
-        m_shader->set("color", m_color);
-        std::cout << m_color << "\n";
+        m_shader->set("ambient", m_ambient);
+    }
+    if (ImGui::ColorEdit3("Diffuse", glm::value_ptr(m_diffuse)))
+    {
+        m_shader->set("diffuse", m_diffuse);
+    }
+    if (ImGui::ColorEdit3("Specular", glm::value_ptr(m_specular)))
+    {
+        m_shader->set("specular", m_specular);
     }
 
+    if (ImGui::SliderFloat("Shininess", &m_shininess, 0.0f, 30.0f))
+    {
+        m_shader->set("shininess", m_shininess);
+    }
+
+    const auto fps = ImGui::GetIO().Framerate;
+    ImGui::LabelText("Framerate", "%.2f FPS", fps);
 
     ImGui::End();
 }

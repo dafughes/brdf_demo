@@ -5,7 +5,10 @@ uniform float fov;
 uniform float camera_radius;
 uniform mat4 view;
 uniform vec3 light_pos;
-uniform vec3 color;
+uniform float shininess;
+uniform vec3 ambient;
+uniform vec3 diffuse;
+uniform vec3 specular;
 
 
 out vec4 FragColor;
@@ -39,6 +42,34 @@ const vec2 supersampling_offsets[] = vec2[](
     vec2(0.125, 0.375),
     vec2(0.375, 0.375));
 
+// light is not normalized
+vec3 phong(vec3 view, vec3 light, vec3 normal)
+{
+    const float constant = 1.0f;
+    const float linear = 0.08f;
+    const float quadratic = 0.03f;
+
+    const float d = length(light);
+    const float intensity = 1.0f / (constant + linear * d + quadratic * d * d);
+    light = normalize(light);
+
+    return intensity *
+        (ambient + max(0.0f, dot(light, normal)) * diffuse +
+         pow(max(0.0f, dot(reflect(-light, normal), view)), shininess) * specular);
+}
+
+float smoothmin(float a, float b, float k)
+{
+    // k *= 1.0;
+    float r = exp2(-a / k) + exp2(-b / k);
+    return -k * log2(r);
+}
+
+float smoothplane(vec3 pos, float height)
+{
+    return sqrt(pos.y * pos.y + 0.00000000001) - height;
+}
+
 
 // SDF stuff from Inigo Quilez (https://iquilezles.org/articles/distfunctions/)
 float plane(vec3 pos, float height)
@@ -54,13 +85,14 @@ float sphere(vec3 pos, float radius)
 float scene_sdf(vec3 pos)
 {
     // Repetition
-    vec3 spacing = vec3(0.3f, 0.0f, 0.3f);
-    vec3 limit = vec3(100, 0, 100);
+    vec3 spacing = vec3(0.21f, 0.0f, 0.21f);
+    vec3 limit = vec3(50, 0, 50);
     vec3 q = pos - spacing * clamp(round(pos / spacing), -limit, limit);
 
     const float s = sphere(q, 0.1f);
     return min(plane(pos, 0.0f), s);
 }
+
 
 // Central difference
 vec3 scene_normal(vec3 pos)
@@ -108,12 +140,10 @@ vec3 march(vec3 origin, vec3 direction)
         vec3 normal = scene_normal(hit);
 
         vec3 light_hit;
-        vec3 light_dir = normalize(light_pos - hit);
-
-        if (!march_ray(hit + eps * normal, light_dir, light_hit))
+        vec3 light_dir = light_pos - hit;
+        if (!march_ray(hit + eps * normal, normalize(light_dir), light_hit))
         {
-            float diff = max(0.0f, dot(light_dir, normal));
-            return color * diff;
+            return phong(normalize(origin - hit), light_dir, normal);
         }
     }
     return vec3(0);
