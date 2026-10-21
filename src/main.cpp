@@ -9,7 +9,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <algorithm>
 
-double scroll = 5.0f;
+double scroll_delta = 0.0f;
 
 
 class Shader
@@ -44,7 +44,7 @@ private:
 class OrbitalCamera
 {
 public:
-    OrbitalCamera(float pitch, float yaw, float radius = 1.0f, float fov = 90.0f) :
+    OrbitalCamera(float pitch, float yaw, float radius = 1.0f, float fov = glm::radians(90.0f)) :
         m_pitch(pitch),
         m_yaw(yaw),
         m_fov(fov),
@@ -66,6 +66,11 @@ public:
         return m_fov;
     }
 
+    void set_fov(float fov)
+    {
+        m_fov = fov;
+    }
+
     float radius() const
     {
         return m_radius;
@@ -73,7 +78,7 @@ public:
 
     void set_radius(float r)
     {
-        m_radius = std::clamp(r, 0.1f, 5.0f);
+        m_radius = std::clamp(r, 0.1f, 50.0f);
     }
 
 
@@ -99,8 +104,8 @@ public:
     void update(float x, float y)
     {
         const auto sensitivity = 0.002f;
-        auto deltax = m_x_start - x;
-        auto deltay = m_y_start - y;
+        auto deltax = x - m_x_start;
+        auto deltay = y - m_y_start;
         m_yaw = m_yaw_start + deltax * sensitivity;
         m_pitch = m_pitch_start + deltay * sensitivity;
 
@@ -140,7 +145,7 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h) { glViewport(0, 0, w, h); });
 
-    glfwSetScrollCallback(window, [](GLFWwindow*, double, double y) { scroll -= y; });
+    glfwSetScrollCallback(window, [](GLFWwindow*, double, double y) { scroll_delta = y; });
 
 #ifndef NDEBUG
     // Init debugging
@@ -168,7 +173,7 @@ int main()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    OrbitalCamera camera(0.0f, 0.0f, 5.0f);
+    OrbitalCamera camera(0.0f, 0.0f, 5.0f, 80.0f);
 
     {
         // Compile shaders
@@ -185,6 +190,7 @@ int main()
 
         while (!glfwWindowShouldClose(window))
         {
+            scroll_delta = 0.0f;
             glfwPollEvents();
 
             if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
@@ -202,8 +208,10 @@ int main()
                 camera.stop_drag();
             }
 
-            camera.set_radius(scroll * 0.1f);
-            program.set("zoom", camera.radius());
+
+            camera.set_radius(camera.radius() * (1.0f + scroll_delta * -0.2f));
+
+            program.set("camera_radius", camera.radius());
 
             program.set("view", camera.view_matrix());
 
