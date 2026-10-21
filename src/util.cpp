@@ -5,6 +5,7 @@
 
 std::string read_file(std::string path)
 {
+    path = std::string(PROJECT_ROOT) + "/" + path;
     std::ifstream f(path);
 
     if (f.is_open())

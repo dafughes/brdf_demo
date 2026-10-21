@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1...3.29)
+cmake_minimum_required(VERSION 3.23)
 
 project(brdf_demo)
 
@@ -23,6 +23,7 @@ set(SOURCES
     src/app.cpp
     src/app_base.cpp
 
+
     deps/glad/src/glad.c
 
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -37,9 +38,11 @@ set(SOURCES
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 
 # Define GLFW_INCLUDE_NONE so no problems #including glfw and glad
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)
+
 
 # Set C++17 as standard
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)

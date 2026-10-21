@@ -40,8 +40,8 @@ void App::on_start()
     m_camera = std::make_unique<OrbitalCamera>(glm::radians(45.0f), 0.0f, 5.0f, 80.0f);
 
     // Compile shaders
-    Shader vs(read_file("./shaders/vs.glsl"), GL_VERTEX_SHADER);
-    Shader fs(read_file("./shaders/fs.glsl"), GL_FRAGMENT_SHADER);
+    Shader vs(read_file("shaders/vs.glsl"), GL_VERTEX_SHADER);
+    Shader fs(read_file("shaders/fs.glsl"), GL_FRAGMENT_SHADER);
     auto shaders = {vs, fs};
     m_shader = std::make_unique<ShaderProgram>(shaders);
 
