@@ -9,15 +9,17 @@ public:
 
     glm::mat4 view_matrix() const;
     float fov() const;
-    void set_fov(float fov);
     float radius() const;
-    void set_radius(float r);
-    bool is_dragging() const;
+
+    void zoom(bool in);
+    void set_fov(float fov);
     void start_drag(float x, float y);
     void stop_drag();
     void update(float x, float y);
 
 private:
+    float m_zoom_sensitivity, m_drag_sensitivity;
+
     float m_pitch, m_yaw, m_fov, m_radius;
     bool m_is_dragged;
     float m_pitch_start, m_yaw_start;

@@ -13,7 +13,9 @@ OrbitalCamera::OrbitalCamera(float pitch, float yaw, float radius, float fov) :
     m_pitch_start(pitch),
     m_yaw_start(yaw),
     m_x_start(0),
-    m_y_start(0)
+    m_y_start(0),
+    m_drag_sensitivity(0.002f),
+    m_zoom_sensitivity(0.1f)
 {}
 
 glm::mat4 OrbitalCamera::view_matrix() const
@@ -26,25 +28,20 @@ float OrbitalCamera::fov() const
     return m_fov;
 }
 
-void OrbitalCamera::set_fov(float fov)
-{
-    m_fov = fov;
-}
-
 float OrbitalCamera::radius() const
 {
     return m_radius;
 }
 
-void OrbitalCamera::set_radius(float r)
+void OrbitalCamera::set_fov(float fov)
 {
-    m_radius = std::clamp(r, 0.1f, 50.0f);
+    m_fov = fov;
 }
 
-
-bool OrbitalCamera::is_dragging() const
+void OrbitalCamera::zoom(bool in)
 {
-    return m_is_dragged;
+    const auto k = in ? 1 - m_zoom_sensitivity : 1 + m_zoom_sensitivity;
+    m_radius = std::clamp(m_radius * k, 0.1f, 50.0f);
 }
 
 void OrbitalCamera::start_drag(float x, float y)
@@ -63,11 +60,14 @@ void OrbitalCamera::stop_drag()
 
 void OrbitalCamera::update(float x, float y)
 {
-    const auto sensitivity = 0.002f;
-    auto deltax = x - m_x_start;
-    auto deltay = y - m_y_start;
-    m_yaw = m_yaw_start + deltax * sensitivity;
-    m_pitch = m_pitch_start + deltay * sensitivity;
+    if (m_is_dragged)
+    {
+        const auto sensitivity = 0.002f;
+        auto deltax = x - m_x_start;
+        auto deltay = y - m_y_start;
+        m_yaw = m_yaw_start + deltax * sensitivity;
+        m_pitch = m_pitch_start + deltay * sensitivity;
 
-    m_pitch = std::clamp(m_pitch, glm::radians(-89.0f), glm::radians(89.0f));
+        m_pitch = std::clamp(m_pitch, glm::radians(-89.0f), glm::radians(89.0f));
+    }
 }

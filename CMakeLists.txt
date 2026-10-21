@@ -10,6 +10,9 @@ FetchContent_MakeAvailable(glfw)
 FetchContent_Declare(glm GIT_REPOSITORY git@github.com:g-truc/glm.git)
 FetchContent_MakeAvailable(glm)
 
+FetchContent_Declare(imgui GIT_REPOSITORY git@github.com:ocornut/imgui.git)
+FetchContent_MakeAvailable(imgui)
+
 
 set(SOURCES
     src/main.cpp
@@ -17,9 +20,20 @@ set(SOURCES
     src/util.cpp
     src/shader.cpp
     src/camera.cpp
+    src/app.cpp
+    src/app_base.cpp
 
     deps/glad/src/glad.c
+
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
+
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -38,4 +52,6 @@ target_include_directories(
     ./deps/glad/include
     ${glfw_SOURCE_DIR}/include
     ${glm_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
 )
