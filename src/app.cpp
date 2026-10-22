@@ -39,27 +39,32 @@ void App::on_start()
 
     m_camera = std::make_unique<OrbitalCamera>(glm::radians(45.0f), 0.0f, 5.0f, 80.0f);
 
-    // Compile shaders
     Shader vs(read_file("shaders/vs.glsl"), GL_VERTEX_SHADER);
     Shader fs(read_file("shaders/fs.glsl"), GL_FRAGMENT_SHADER);
-    auto shaders = {vs, fs};
-    m_shader = std::make_unique<ShaderProgram>(shaders);
+    Shader phong(read_file("shaders/phong.glsl"), GL_FRAGMENT_SHADER);
 
-    m_shader->use();
-    m_shader->set("fov", m_camera->fov());
-    m_shader->set("view", m_camera->view_matrix());
-    m_shader->set("supersampling", m_supersampling);
-    m_shader->set("light_pos", m_light_pos);
-    m_shader->set("shininess", m_shininess);
-    m_shader->set("ambient", m_ambient);
-    m_shader->set("diffuse", m_diffuse);
-    m_shader->set("specular", m_specular);
+    m_supersampling = Select<int>("Supersampling", 1, 4, 16);
 
-    m_shader->set("camera_radius", m_camera->radius());
+    auto phong_components = {vs, fs, phong};
+    m_brdfs = Select<std::unique_ptr<BRDF>>(
+        "BRDF",
+        std::make_unique<Phong>(glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f), 1.0f, phong_components));
+
+
+    m_brdfs.selected()->shader().use();
+
+    m_brdfs.selected()->shader().set("fov", m_camera->fov());
+    m_brdfs.selected()->shader().set("view", m_camera->view_matrix());
+    m_brdfs.selected()->shader().set("camera_radius", m_camera->radius());
+    m_brdfs.selected()->shader().set("light_pos", m_light_pos);
+    m_brdfs.selected()->shader().set("light_intensity", m_light_intensity);
+    m_brdfs.selected()->shader().set("supersampling", m_supersampling.selected());
+    m_brdfs.selected()->update_uniforms();
+
 
     int w, h;
     glfwGetWindowSize(m_window, &w, &h);
-    m_shader->set("screen_size", glm::vec2((float)w, (float)h));
+    m_brdfs.selected()->shader().set("screen_size", glm::vec2((float)w, (float)h));
 
     glfwSetWindowUserPointer(m_window, this);
 
@@ -76,7 +81,7 @@ void App::on_start()
 void App::on_resize(int w, int h)
 {
     AppBase::on_resize(w, h);
-    m_shader->set("screen_size", glm::vec2((float)w, (float)h));
+    m_brdfs.selected()->shader().set("screen_size", glm::vec2((float)w, (float)h));
 }
 
 void App::on_mouse_move(double x, double y)
@@ -84,7 +89,7 @@ void App::on_mouse_move(double x, double y)
     if (!ImGui::GetIO().WantCaptureMouse)
     {
         m_camera->update(x, y);
-        m_shader->set("view", m_camera->view_matrix());
+        m_brdfs.selected()->shader().set("view", m_camera->view_matrix());
     }
 }
 
@@ -111,50 +116,35 @@ void App::on_update()
     ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_FirstUseEver);
     ImGui::Begin("Scene settings");
 
-    const char* items[] = {"1", "4", "16"};
-    static const char* current_item = items[0];
-    if (ImGui::BeginCombo("Supersampling", current_item))
+    if (m_supersampling.update())
     {
-        for (int n = 0; n < IM_ARRAYSIZE(items); n++)
-        {
-            bool is_selected = (current_item == items[n]);
-            if (ImGui::Selectable(items[n], is_selected))
-            {
-                m_supersampling = 1 << (n * 2);
-                m_shader->set("supersampling", m_supersampling);
-                current_item = items[n];
-            }
-            if (is_selected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-
-        ImGui::EndCombo();
+        m_brdfs.selected()->shader().set("supersampling", m_supersampling.selected());
     }
+
+    if (m_brdfs.update())
+    {
+        std::cout << m_brdfs.selected() << "\n";
+    }
+
+    ImGui::SeparatorText("Light");
+
 
     if (ImGui::SliderFloat3("Light position", glm::value_ptr(m_light_pos), -30.0f, 30.0f))
     {
-        m_shader->set("light_pos", m_light_pos);
+        m_brdfs.selected()->shader().set("light_pos", m_light_pos);
     }
 
-    if (ImGui::ColorEdit3("Ambient", glm::value_ptr(m_ambient)))
+    if (ImGui::SliderFloat3("Light intensity", glm::value_ptr(m_light_intensity), 0.0f, 10.0f))
     {
-        m_shader->set("ambient", m_ambient);
-    }
-    if (ImGui::ColorEdit3("Diffuse", glm::value_ptr(m_diffuse)))
-    {
-        m_shader->set("diffuse", m_diffuse);
-    }
-    if (ImGui::ColorEdit3("Specular", glm::value_ptr(m_specular)))
-    {
-        m_shader->set("specular", m_specular);
+        m_brdfs.selected()->shader().set("light_intensity", m_light_intensity);
     }
 
-    if (ImGui::SliderFloat("Shininess", &m_shininess, 0.0f, 30.0f))
-    {
-        m_shader->set("shininess", m_shininess);
-    }
+    ImGui::SeparatorText(m_brdfs.selected()->name());
+
+    m_brdfs.selected()->update_ui();
+
+    ImGui::SeparatorText("Misc");
+
 
     const auto fps = ImGui::GetIO().Framerate;
     ImGui::LabelText("Framerate", "%.2f FPS", fps);
@@ -175,5 +165,5 @@ void App::on_render()
 void App::on_mouse_scroll(double dx, double dy)
 {
     m_camera->zoom(dy > 0.0);
-    m_shader->set("camera_radius", m_camera->radius());
+    m_brdfs.selected()->shader().set("camera_radius", m_camera->radius());
 }

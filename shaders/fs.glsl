@@ -5,10 +5,7 @@ uniform float fov;
 uniform float camera_radius;
 uniform mat4 view;
 uniform vec3 light_pos;
-uniform float shininess;
-uniform vec3 ambient;
-uniform vec3 diffuse;
-uniform vec3 specular;
+uniform vec3 light_intensity;
 
 
 out vec4 FragColor;
@@ -42,21 +39,9 @@ const vec2 supersampling_offsets[] = vec2[](
     vec2(0.125, 0.375),
     vec2(0.375, 0.375));
 
-// light is not normalized
-vec3 phong(vec3 view, vec3 light, vec3 normal)
-{
-    const float constant = 1.0f;
-    const float linear = 0.08f;
-    const float quadratic = 0.03f;
-
-    const float d = length(light);
-    const float intensity = 1.0f / (constant + linear * d + quadratic * d * d);
-    light = normalize(light);
-
-    return intensity *
-        (ambient + max(0.0f, dot(light, normal)) * diffuse +
-         pow(max(0.0f, dot(reflect(-light, normal), view)), shininess) * specular);
-}
+// `light` should not be not normalized since it contains light distance information
+// Defined in an another file!
+vec3 brdf(vec3 view, vec3 light, vec3 normal);
 
 float smoothmin(float a, float b, float k)
 {
@@ -67,9 +52,8 @@ float smoothmin(float a, float b, float k)
 
 float smoothplane(vec3 pos, float height)
 {
-    return sqrt(pos.y * pos.y + 0.00000000001) - height;
+    return sqrt(pos.y * pos.y + 0.0000000001) - height;
 }
-
 
 // SDF stuff from Inigo Quilez (https://iquilezles.org/articles/distfunctions/)
 float plane(vec3 pos, float height)
@@ -86,13 +70,15 @@ float scene_sdf(vec3 pos)
 {
     // Repetition
     vec3 spacing = vec3(0.21f, 0.0f, 0.21f);
-    vec3 limit = vec3(50, 0, 50);
+    vec3 limit = vec3(20, 0, 20);
     vec3 q = pos - spacing * clamp(round(pos / spacing), -limit, limit);
 
     const float s = sphere(q, 0.1f);
     return min(plane(pos, 0.0f), s);
+    // return smoothmin(smoothplane(pos, 0.0f), s, 0.01f);
 }
 
+// vec3 scene_normal_analytic
 
 // Central difference
 vec3 scene_normal(vec3 pos)
@@ -143,7 +129,7 @@ vec3 march(vec3 origin, vec3 direction)
         vec3 light_dir = light_pos - hit;
         if (!march_ray(hit + eps * normal, normalize(light_dir), light_hit))
         {
-            return phong(normalize(origin - hit), light_dir, normal);
+            return brdf(normalize(origin - hit), light_dir, normal) * light_intensity;
         }
     }
     return vec3(0);
@@ -195,7 +181,6 @@ void main()
 
         color += march(ray_origin, ray_direction);
     }
-
 
     FragColor = vec4(color / float(supersampling), 1.0f);
 }
