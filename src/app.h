@@ -77,6 +77,40 @@ private:
     float m_shininess;
 };
 
+class AshikhminShirley : public BRDF
+{
+public:
+    AshikhminShirley(glm::vec3 rs, glm::vec3 rd, float nu, float nv, std::initializer_list<Shader> shader_components) :
+        BRDF("Ashikhmin-Shirley", shader_components),
+        m_rs(rs),
+        m_rd(rd),
+        m_nu(nu),
+        m_nv(nv)
+    {}
+
+    virtual void update_ui() override
+    {
+        ImGui::ColorEdit3("R_s", glm::value_ptr(m_rs));
+        ImGui::ColorEdit3("R_d", glm::value_ptr(m_rd));
+        ImGui::InputFloat("n_u", &m_nu);
+        ImGui::InputFloat("n_v", &m_nv);
+
+        update_uniforms();
+    }
+
+    virtual void update_uniforms() override
+    {
+        m_shader.set("r_s", m_rs);
+        m_shader.set("r_d", m_rd);
+        m_shader.set("n_u", m_nu);
+        m_shader.set("n_v", m_nv);
+    }
+
+private:
+    glm::vec3 m_rs, m_rd;
+    float m_nu, m_nv;
+};
+
 class App : public AppBase
 {
 public:

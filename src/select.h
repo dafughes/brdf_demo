@@ -13,7 +13,7 @@ public:
     Select()
     {}
     template<typename... Args>
-    Select(std::string label, Args&&... args) : m_label(label), m_selected(0)
+    Select(std::string label, Args&&... args) : m_label(label), m_selected(1)
     {
         m_items.reserve(sizeof...(Args));
         (m_items.emplace_back(std::forward<Args>(args)), ...);

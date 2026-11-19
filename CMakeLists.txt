@@ -13,6 +13,9 @@ FetchContent_MakeAvailable(glm)
 FetchContent_Declare(imgui GIT_REPOSITORY git@github.com:ocornut/imgui.git)
 FetchContent_MakeAvailable(imgui)
 
+FetchContent_Declare(stb GIT_REPOSITORY git@github.com:nothings/stb.git)
+FetchContent_MakeAvailable(stb)
+
 
 set(SOURCES
     src/main.cpp
@@ -22,7 +25,6 @@ set(SOURCES
     src/camera.cpp
     src/app.cpp
     src/app_base.cpp
-
 
     deps/glad/src/glad.c
 
@@ -57,4 +59,5 @@ target_include_directories(
     ${glm_SOURCE_DIR}
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
+    ${stb_SOURCE_DIR}/
 )
